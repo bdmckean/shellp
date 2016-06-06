@@ -2,12 +2,6 @@
 #define SHELLP_H
 
 
-const char * default_prompt = "shellp>";
 
-
-
-
-
-
-
+extern char ** parseline(char * line);
 #endif
