@@ -3,5 +3,5 @@
 
 
 
-extern char ** parseline(char * line);
+extern char ** parseline(char * line, int * num_args);
 #endif

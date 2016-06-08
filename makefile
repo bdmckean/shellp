@@ -14,7 +14,7 @@ shellp.o: shellp.c shellp.h commands.h
 commands.o: commands.c commands.h
 	$(CC) $(CFLAGS) commands.c
 
-parseline.o: parseline.c 
+parseline.o: parseline.c shellp.h 
 	$(CC) $(CFLAGS) parseline.c
 
 clean:

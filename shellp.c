@@ -9,11 +9,13 @@
 const char * default_prompt = "shellp>";
 char prompt[1024];
 int debug = 10;
+int background;
+int num_args;
 
 int (* fcn)( char ** args);
 
 int main(int argc, char ** argv){
-    
+    background = 0; 
     if ( argc > 1 ) {
         // batch mode
         //
@@ -43,15 +45,15 @@ int main(int argc, char ** argv){
         //printf("%s",next_cmd);
         if (strlen(next_cmdp) == 0) continue;
         
-        args = parseline(next_cmdp);
+        args = parseline(next_cmdp, &num_args);
         cmd = args[0];
+        printf("%s:%d\n",cmd,num_args);
+        if (cmd == NULL) continue;
         if (debug > 8){
-            printf("%s\n", cmd);
-
             char * tmp = args[0];
             int i = 0;
             while ( tmp != NULL){
-                printf("%s", tmp);
+                printf("%s:", tmp);
                 i++;
                 tmp = args[i];
                 if ( tmp == NULL) printf("\n");
@@ -62,25 +64,38 @@ int main(int argc, char ** argv){
                 // Shell does not execute this command
                 passthru = true;
         } else {
-            if (fcn(args) == 0) {
+            if (fcn(args) == 1) {
                     // Shell does part of this command and passes the rest
                     passthru = true; 
             }
         }
         if (!passthru) continue;
-        // Find path for command        
-        // 
-        // Child
-        if (fork() == 0) {
-        // execvp(fullpathname, args); } 
-            execvp(cmd, args); 
-        } else {  
-        // Parent
-            int status=0;
-            wait(&status);
-            printf("Child exited with status of %d/n", status); 
+        if ( args[num_args-1][0] == '&') {
+            background = 1;
+            args[num_args-1] = NULL;
         }
-    } 
+        else background = 0;
+
+        int pid = fork();
+        if ( pid < 0 ){
+            printf("fork failed\n");
+            exit(1);
+        }
+        if (pid  == 0) {
+            // Child
+            // execvp(fullpathname, args); } 
+            execvp(cmd, args); 
+        } else { 
+            // Parent
+            if (background){
+                printf("Child process spawned pid=%d\n",pid); 
+            } else {
+                int status=0;
+                wait(&status);
+                printf("Child exited with status of %d/n", status); 
+            } 
+        }
+    }
         
     exit (0);
 }

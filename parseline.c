@@ -6,12 +6,12 @@ const char * token_sep = " \r\n\\\t";
 
 #define argsize 128 
 
-char ** parseline(char * line){
+char ** parseline(char * line, int * num_args){
 
     char ** args = (char **) malloc(argsize*sizeof(line));
     char * arg;
     int argnum = 0;
-   
+  
     arg = strtok(line,token_sep);
     printf("pl-%s\n",arg);
     while ( arg != NULL){
@@ -25,6 +25,7 @@ char ** parseline(char * line){
         printf("pl2-%s\n",arg);
     }
     args[argnum] = NULL;
+    *num_args = argnum;
     return args;
 
 } 

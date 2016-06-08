@@ -35,6 +35,9 @@ int init_dir_stack(void){
         strcpy(dir_stack[0],cwdp);
         num_dirs = 1;
         next_dir = 1;
+    } else {
+        printf("call to getcwd returned NULL\n");
+        exit(1);
     }
     return 0;
 }
@@ -64,13 +67,20 @@ int chg_dir(char ** args){
             }
         }
     }
+    printf("next_dir=%d,num_dir=%d\n",next_dir,num_dirs);
+    if (next_dir == 0 ) this_dir = SIZE_DIR_STACK -1;
+    else this_dir = next_dir - 1;
+    for (int i = 0; i < num_dirs ; i++){
+        printf("dirstack[%d],%d,%s\n",this_dir,i,dir_stack[this_dir]);
+        if (this_dir == 0) this_dir = SIZE_DIR_STACK -1;
+        else this_dir--;
+    }
     return 0; 
 }
 
 struct cmd_fcn cmds[] =  
     {
-        {"set", unimplemented_command},
-        {"cd", unimplemented_command},
+        {"cd", chg_dir},
         {"quit", quit},
         {"exit", quit},
         {"dx", unimplemented_command},
