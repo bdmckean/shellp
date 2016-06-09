@@ -11,20 +11,9 @@ int this_dir = 0;
 int next_dir = 0;
 int num_dirs = 0;
 
+#define CMD_DONE 0
+#define CMD_NOT_DONE 1
 
-int unimplemented_command(char ** args){
-    printf("Command not yet implemenetd\n" );
-    return -1;
-}
-
-int quit(char ** args){
-    // FIXME add wait until all processes are done
-    exit(0);
-}
-struct cmd_fcn{
-    char cmd[256];
-    int (* fcn )(char ** args);
-};
 
 
 int init_dir_stack(void){
@@ -41,8 +30,33 @@ int init_dir_stack(void){
     }
     return 0;
 }
+//
+// Commands
+//
+
+int unimplemented_command(char ** args){
+    printf("Command not yet implemenetd\n" );
+    return -1;
+}
+
+int quit(char ** args){
+    // FIXME add wait until all processes are done
+    exit(0);
+}
+struct cmd_fcn{
+    char cmd[256];
+    int (* fcn )(char ** args);
+};
+
 
 int chg_dir(char ** args){
+    int debug = 0;
+    if( debug){
+    printf("chd_dir ");
+    fflush(stdout);
+    if (debug) printf("cmd:%s , %s\n",args[0], args[1]);
+    fflush(stdout);
+    }
     if (args[1] == NULL || args[2] != NULL){
         fprintf(stderr, "shellp expected one argument to \"cd\"\n");
     } else {
@@ -75,12 +89,13 @@ int chg_dir(char ** args){
         if (this_dir == 0) this_dir = SIZE_DIR_STACK -1;
         else this_dir--;
     }
-    return 0; 
+    return CMD_DONE; 
 }
 
 struct cmd_fcn cmds[] =  
     {
         {"cd", chg_dir},
+        //{"cd", unimplemented_command},
         {"quit", quit},
         {"exit", quit},
         {"dx", unimplemented_command},
@@ -94,16 +109,17 @@ struct cmd_fcn cmds[] =
 int (* (command_handler(char * cmd)))(char ** args){
     int num_cmds = sizeof(cmds)/sizeof(struct cmd_fcn);
 
-    
+    int debug = 0;
+    if (debug) {
+        printf("cmd_h %s", cmd);
+        fflush(stdout);
+    }   
     for (int i = 0; i < num_cmds; i++){
         if (strcmp(cmd, cmds[i].cmd) == 0){
             return cmds[i].fcn;
         }
     }
     return NULL;
-
-}
-
-
+} 
 
     
