@@ -50,8 +50,7 @@ struct cmd_fcn{
 
 
 int chg_dir(char ** args){
-    int debug = 0;
-    if( debug){
+    if( debug > 21){
     printf("chd_dir ");
     fflush(stdout);
     if (debug) printf("cmd:%s , %s\n",args[0], args[1]);
@@ -81,11 +80,11 @@ int chg_dir(char ** args){
             }
         }
     }
-    printf("next_dir=%d,num_dir=%d\n",next_dir,num_dirs);
+    if ( debug > 2) printf("next_dir=%d,num_dir=%d\n",next_dir,num_dirs);
     if (next_dir == 0 ) this_dir = SIZE_DIR_STACK -1;
     else this_dir = next_dir - 1;
     for (int i = 0; i < num_dirs ; i++){
-        printf("dirstack[%d],%d,%s\n",this_dir,i,dir_stack[this_dir]);
+        if ( debug > 2 ) printf("dirstack[%d],%d,%s\n",this_dir,i,dir_stack[this_dir]);
         if (this_dir == 0) this_dir = SIZE_DIR_STACK -1;
         else this_dir--;
     }
@@ -109,9 +108,8 @@ struct cmd_fcn cmds[] =
 int (* (command_handler(char * cmd)))(char ** args){
     int num_cmds = sizeof(cmds)/sizeof(struct cmd_fcn);
 
-    int debug = 0;
-    if (debug) {
-        printf("cmd_h %s", cmd);
+    if (debug > 20 ) {
+        if ( debug > 5) printf("cmd_h %s", cmd);
         fflush(stdout);
     }   
     for (int i = 0; i < num_cmds; i++){

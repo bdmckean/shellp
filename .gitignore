@@ -1,3 +1,4 @@
 shellp.o
 shellp
 *.o
+tmp*

@@ -1,0 +1,7 @@
+ls > tmp
+cat tmp > tmp2
+cat <tmp > tmp3
+ls | cat > tmp4
+cat tmp >> tmp2
+date | cat 
+date | cat  >> tmp2

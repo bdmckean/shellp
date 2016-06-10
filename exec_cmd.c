@@ -11,23 +11,16 @@
 #include "commands.h"
 
 int (* fcn)( char ** args);
+int start_cmd(int fdin, int fdout, char ** arglist, int background, int close_this);
 
 int exec_cmds(char ** cmd_list, int num_args, bool batch){
+    char * cmd;
+    char ** args;
+    int background = 0;
 
-    int debug = 10;
-
-    int background = 0; 
-    if ( batch ) {
-        // batch mode
-        //
-        if (debug > 9) printf("Batch Mode \n");
-        printf("Batch Mode Not yet implemented\n");// fixme
-        exit(0);    
-    }
-
-    char * cmd, **args = cmd_list;
+    args = cmd_list;
     cmd = args[0];
-    printf("%s:%d\n",cmd,num_args);
+    if ( debug > 2) printf("%s:%d\n",cmd,num_args);
     if (cmd == NULL) return 0;
     if (debug > 8){
         char * tmp = args[0];
@@ -39,9 +32,7 @@ int exec_cmds(char ** cmd_list, int num_args, bool batch){
             if ( tmp == NULL) printf("\n");
         }
     } 
-    // Interactive mode
     if (debug > 8) printf("cm:%s\n",cmd_list[0]);
-    if (debug > 9) printf("Interactive Mode \n");
     
     int index = 0;
     bool more_cmds = true;
@@ -59,7 +50,7 @@ int exec_cmds(char ** cmd_list, int num_args, bool batch){
         more_cmds = false;
         bool in = false, out = false, out_append = false;
         
-        char * pipe_cmds[256];
+        int pipe_cmds[256];
         int num_pipe_cmds = 0;
         bool piping = false;
         int fdin = 0, fdout = 1; 
@@ -74,34 +65,42 @@ int exec_cmds(char ** cmd_list, int num_args, bool batch){
 
         if (debug > 3) printf("3:%s mc=%d\n",arglist[0], (int)more_cmds);
         while(1){
-            // We've reached the end
+            // Have we reached the end
             if (next_cmd[arg] == NULL) break;
             // There is more
-            if (debug > 3) printf("3:%s %d %s if=%s\n"
+            if (debug > 3) printf("3.2:%s %d %s if=%s\n"
                     ,next_cmd[0], arg, next_cmd[arg], next_cmd[arg+1]);
             // Pull out pipes and redirects
             if (next_cmd[arg][0] == '<'){
                 in = true;
-                strcpy(infile,&(next_cmd[arg][1]));
+                strcpy(infile,next_cmd[arg+1]);
+                // skip the next item
+                arg = arg + 1;
                 goto next_item;
             } else if (next_cmd[arg][0] == '>'){
                 out = true;
-                if ( next_cmd[arg][1] == '>'){
+                if ( next_cmd[arg+1][0] == '>'){
                     out_append = true;
                     wr_flag = O_CREAT|O_WRONLY|O_APPEND;
-                    strcpy(outfile, &(next_cmd[arg][2]));
+                    strcpy(outfile, next_cmd[arg+2]);
+                    arg = arg + 2;
                 } else {
                     wr_flag = O_CREAT|O_WRONLY;
-                    strcpy(outfile, &(next_cmd[arg][1]));
+                    strcpy(outfile, next_cmd[arg+1]);
+                    arg = arg + 1;
                 }
+                if ( debug > 3) printf("argl[x]%s, next_c[y]%s arg%d, arg_index %d of=%s\n"
+                    ,arglist[arg_index], next_cmd[arg], arg, arg_index, outfile);
                 goto next_item;
             } else if (next_cmd[arg][0] == '|'){
                 piping = true;
-                pipe_cmds[num_pipe_cmds] = next_cmd[arg];
+                pipe_cmds[num_pipe_cmds] = arg_index+1;
                 num_pipe_cmds += 1;
+                next_cmd[arg] = NULL;
+                arglist[arg_index] = NULL;
+                arg_index = arg_index + 1;
                 goto next_item;
-            }  
-            if (next_cmd[arg][0] == ';'){
+            } else if (next_cmd[arg][0] == ';'){
             // Or there is more Replace next ; with a NULL
                 next_cmd[arg] = NULL;
                 if (next_cmd[arg+1] != NULL){
@@ -110,8 +109,10 @@ int exec_cmds(char ** cmd_list, int num_args, bool batch){
                 }
                 break;
             }
-            printf("arglist[x]%s, next_cmd[y]%s\n",arglist[arg_index], next_cmd[arg]);
             strcpy(arglist[arg_index], next_cmd[arg]);
+            if ( debug > 3) printf("arglist[x]%s, next_cmd[y]%s arg%d, arg_index %d\n"
+                    ,arglist[arg_index], next_cmd[arg], arg, arg_index);
+            fflush(stdout);
             arg_index = arg_index + 1;
 next_item:
             arg = arg + 1;
@@ -131,11 +132,11 @@ next_item:
             }
         } 
 
-        int num_args = arg;
+        int num_args = arg_index;
         // Is this backgound?
-        if ( next_cmd[num_args-1][0] == '&') {
+        if ( arglist[num_args-1][0] == '&') {
             background = 1;
-            next_cmd[num_args-1] = NULL;
+            arglist[num_args-1] = NULL;
         }
         else background = 0;
 
@@ -149,6 +150,7 @@ next_item:
                 // Shell does part of this command and passes the rest
                 passthru = true; 
             }
+            if (piping) { printf("Error -- trying to pipe with shell commands \n");}
         }
         if (!passthru) continue;
         
@@ -159,7 +161,7 @@ next_item:
             printf("fopen error in=%d, fn=%s\n", fdin, infile);
             return 1;
         }
-        if (out) fdout = open("tmp",wr_flag,0644);
+        if (out) fdout = open(outfile,wr_flag,0644);
         if (fdout < 0) { 
             printf("fopen error out=%d, fn=%s\n", fdout, outfile);
             if (fdin > 0) close(fdin);
@@ -167,31 +169,67 @@ next_item:
         }
         // Fixme 
         if (debug) printf("7 fdin%d fdout%d pipes%d \n",fdin, fdout, num_pipe_cmds);
-        if (debug) printf("8 cmd:%s args%s bg:%d \n",arglist[0], arglist[1], background);
 
-        // Execute commands in this line 
-        int pid = fork();
-        if ( pid < 0 ){
-            printf("fork failed\n");
-            exit(1);
+        // Execute commands in this line
+        if (!piping) {
+            start_cmd(fdin,fdout,arglist,background, 0);
+        } else {
+            int in = fdin;
+            int fd[2];
+            // Create a pipe between each command
+            char ** thislist = arglist;
+            if (debug) printf("9 cmd:%s args%s bg:%d p?=%d np=%d\n",
+                thislist[0], thislist[1], background, (int)piping, num_pipe_cmds);
+            for (int i = 0; i < num_pipe_cmds ; i++){
+                pipe(fd); 
+                start_cmd(in,fd[1],thislist,true, fd[0]);
+                close(fd[1]);
+                in = fd[0]; 
+                thislist = &(arglist[pipe_cmds[i]]);
+            }
+
+            start_cmd(in,fdout,thislist,background,0);
         }
-        if (pid  == 0) {
-            // Child
-            if (fdin != 0 ) { dup2(fdin,STDIN_FILENO);  close(fdin); }
-            if (fdout != 1 ) {dup2(fdout,STDOUT_FILENO); close(fdout);}
-            execvp(arglist[0], arglist); 
-        } else { 
-            // Parent
-            if (background){
-                printf("Child process spawned pid=%d\n",pid); 
-            } else {
-                int status=0;
-                wait(&status);
-                printf("Child exited with status of %d/n", status); 
-            } 
-        }
+
         if (fdin > 0 ) close(fdin);
         if (fdout > 1) close(fdout);
+        fflush(stdout);
     }
     return 0;   
+}
+
+
+int start_cmd(int fdin, int fdout, char ** arglist, int background, int close_this){
+    if (debug > 2) printf("Startcmd cmd:%s args%s bg:%d fdi=%d fdo=%d c=%d\n"
+            ,arglist[0], arglist[1], background, fdin, fdout, close_this);
+    int pid = fork();
+    
+    if ( pid < 0 ){
+        printf("fork failed\n");
+        exit(1);
+    } else
+    if (pid  == 0) {
+        // Child
+        if (debug > 10) printf("Startcmd (ch) cmd:%s args%s bg:%d fdi=%d fdo=%d c=%d\n"
+            ,arglist[0], arglist[1], background, fdin, fdout, close_this);
+        if (fdin != 0 ) { dup2(fdin,STDIN_FILENO);  close(fdin); }
+        if (fdout != 1 ) { dup2(fdout,STDOUT_FILENO); close(fdout);}
+        if ( close_this != 0 ) close(close_this);
+        return execvp(arglist[0], arglist); 
+    } else { 
+        // Parent
+        if (debug > 10) printf("Startcmd (p) cmd:%s args%s bg:%d fdi=%d fdo=%d c=%d\n"
+            ,arglist[0], arglist[1], background, fdin, fdout, close_this);
+        if (background){
+            if (debug > 1) printf("Child process spawned pid=%d\n",pid); 
+        } else {
+            int status=0;
+            wait(&status);
+            if (debug > 1) printf("Child exited with status of %d/n", status); 
+        } 
+        if (debug > 10) printf("Startcmd (pe) cmd:%s args%s bg:%d fdi=%d fdo=%d c=%d\n"
+            ,arglist[0], arglist[1], background, fdin, fdout, close_this);
+        return (pid);
+    }
+    return 0;
 }

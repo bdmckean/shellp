@@ -1,0 +1,2 @@
+ls > tmp
+cat tmp > tmp2
