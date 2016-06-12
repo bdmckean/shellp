@@ -42,6 +42,8 @@ int main(int argc, char ** argv){
                 printf(":line-%s\n",this_line);
                 printf(":t-%s\n",t);
             }
+            // echo line
+            printf("%s\n",this_line);
             args = parseline(t,&num_args);
 
             if ( exec_cmds(args, num_args, true) != 0 ){
@@ -60,6 +62,7 @@ int main(int argc, char ** argv){
     if (debug > 9) printf("Interactive Mode \n");
 
     init_dir_stack();
+    init_cmd_stack();
     strcpy(prompt,default_prompt);
     char hostname[1024] = "shellp-";
     hostname[1023] = '\0';
@@ -77,8 +80,8 @@ int main(int argc, char ** argv){
             // EOF, ctrdD
             exit(0);
         }
+        add_cmd(next_cmdp); 
         if (strlen(next_cmdp) == 0) continue;
-        
         args = parseline(next_cmdp, &num_args);
         cmd = args[0];
         if (debug > 15) printf("%s:%d\n",cmd,num_args);
@@ -91,7 +94,6 @@ int main(int argc, char ** argv){
             free(args[i]);
         }
         free(args);
-
     }
         
     exit (0);

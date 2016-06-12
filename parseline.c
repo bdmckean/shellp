@@ -30,6 +30,7 @@ char ** parseline(char * line, int * num_args){
         strcpy(new_str,"");
         int nindex = 0;
         int tindex = 0;
+         if(debug > 5) printf("pl2-%s\n",arg);
         while(1){
             char c = this_str[tindex];
             if (debug > 10) {

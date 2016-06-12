@@ -100,7 +100,8 @@ struct cmd_fcn cmds[] =
         {"dx", unimplemented_command},
         {"dh",unimplemented_command},
         {"dc",unimplemented_command},
-        {"fc", unimplemented_command}
+        {"fc", fc},
+        {"history", history}
     };
 
 
