@@ -6,7 +6,6 @@ const char * token_sep = " \r\n\\\t";
 
 
 char ** parseline(char * line, int * num_args){
-
     char ** args = malloc(1024 * sizeof(char *));
     char * arg;
     int argnum = 0;
@@ -37,7 +36,7 @@ char ** parseline(char * line, int * num_args){
                 if ( debug > 6) printf("1char=%c, arg=%s, t=%s, n=%s, ti=%d, ni=%d\n",
                         c,arg,this_str, new_str, tindex, nindex);
             }
-            if ( c == '|' || c == '<' || c == '>' ){
+            if ( c == '|' || c == '<' || c == '>' || c == '(' || c == ')' ){
                 if (nindex != 0){
                     new_str[nindex] = '\0';
                     if (debug > 5) printf("plx-%s\n",new_str);

@@ -95,7 +95,6 @@ int fc(char ** args){
     tmp2 = args[2]; 
     int start, end;
 
-    int debug = 20;
     if ( debug > 10) printf("fc %s, %s\n", tmp1, tmp2);
     if (tmp1 == NULL && tmp2 == NULL){
         start = cur_cmd;

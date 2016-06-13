@@ -49,20 +49,7 @@ struct cmd_fcn{
 };
 
 
-int chg_dir(char ** args){
-    if( debug > 21){
-    printf("chd_dir ");
-    fflush(stdout);
-    if (debug) printf("cmd:%s , %s\n",args[0], args[1]);
-    fflush(stdout);
-    }
-    if (args[1] == NULL || args[2] != NULL){
-        fprintf(stderr, "shellp expected one argument to \"cd\"\n");
-    } else {
-        if (chdir(args[1]) != 0){
-            perror("shellp");
-        }
-    }
+int add_current_dir_to_stack(void){
     char cwd[1024];
     char * cwdp = cwd;
 
@@ -88,18 +75,127 @@ int chg_dir(char ** args){
         if (this_dir == 0) this_dir = SIZE_DIR_STACK -1;
         else this_dir--;
     }
-    return CMD_DONE; 
+    return 0;
 }
 
+
+
+int chg_dir(char ** args){
+    if( debug > 21){
+    printf("chd_dir ");
+    fflush(stdout);
+    if (debug) printf("cmd:%s , %s\n",args[0], args[1]);
+    fflush(stdout);
+    }
+    if (args[1] == NULL || args[2] != NULL){
+        fprintf(stderr, "shellp expected one argument to \"cd\"\n");
+    } else {
+        if (chdir(args[1]) != 0){
+            perror("shellp");
+        }
+    }
+    add_current_dir_to_stack();
+   return CMD_DONE; 
+}
+
+int dh(char ** args)
+{
+    // Directory history
+    //
+    int n;
+    char * tmp;
+
+    if ( debug > 9) printf("Dir History \n");
+    if ( num_dirs == 0){
+        printf("No history\n");
+        return 0;
+    }
+
+    tmp = args[1];
+    if ( debug > 9) printf("History2 %s \n", tmp);
+    if (tmp == NULL) {
+        n = 20;
+    } else if (validate_number(tmp) != 0){
+       printf("shellp error - illegal fommand cound \n");
+       return 1; 
+    } else {
+       n = atoi(args[1]);
+    }
+    int thisd = next_dir - 1; 
+    if (thisd < 0 && num_dirs > 0) thisd = SIZE_DIR_STACK - 1;
+    if (n > num_dirs) n = num_dirs; 
+    if ( debug > 9) printf("History4 %d tc%d cc%d\n", n, thisd, this_dir); 
+    for ( int i = 0; i < n; i ++ ){ 
+        if ( debug > 9) printf("History5 %d tc%d cc%d\n", n, thisd, this_dir); 
+        printf(" %d %s\n", i, dir_stack[thisd]); 
+        thisd--; 
+        if ( thisd < 0 ) thisd = SIZE_DIR_STACK - 1;  
+    }
+
+
+
+    return 0;
+
+}
+
+int dx (char ** args){
+    char tmp[1024];
+    
+    if (num_dirs < 2) return 0;
+
+    int thisd = next_dir - 1; 
+    if (thisd < 0 && num_dirs > 0) thisd = SIZE_DIR_STACK - 1;
+    int lastd = thisd - 1;
+    if (lastd < 0 && num_dirs > 0) lastd = SIZE_DIR_STACK - 1;
+
+    strcpy(tmp,dir_stack[lastd]);
+    strcpy(dir_stack[lastd],dir_stack[thisd]);
+    strcpy(dir_stack[thisd],tmp);
+
+    if (chdir(tmp) != 0){
+            perror("shellp");
+    }
+    
+    return 0;
+}
+
+int dc (char ** args){
+    char tmp[1024];
+    char * tmp2;
+    int n;
+
+    tmp2 = args[1];
+    if ( debug > 9) printf("DC %s \n", tmp2);
+    if (tmp2 == NULL) {
+        return 0;
+    } else if (validate_number(tmp) != 0){
+       printf("shellp error - illegal fommand cound \n");
+       return 1; 
+    } else {
+       n = atoi(args[1]);
+    }
+
+    if (n > num_dirs) return 0;
+
+    int thisd = next_dir - n - 1; 
+    if (thisd < 0 && num_dirs > 0) thisd = SIZE_DIR_STACK - 1;
+
+
+    if (chdir(dir_stack[thisd]) != 0){
+            perror("shellp");
+    }
+    add_current_dir_to_stack();
+    
+    return 0;
+}
 struct cmd_fcn cmds[] =  
     {
         {"cd", chg_dir},
-        //{"cd", unimplemented_command},
         {"quit", quit},
         {"exit", quit},
-        {"dx", unimplemented_command},
-        {"dh",unimplemented_command},
-        {"dc",unimplemented_command},
+        {"dx", dx},
+        {"dh",dh},
+        {"dc",dc},
         {"fc", fc},
         {"history", history}
     };
