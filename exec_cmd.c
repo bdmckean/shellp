@@ -261,14 +261,15 @@ next_item:
             if (debug> 7) printf("9.4 cmd:%s %s %s\n",
                tmparglist[0], tmparglist[1], tmparglist[2]);
 
-            start_cmd(in,out,tmparglist,true,0);
-            // Attach other commands to write end of pipe(s)
+            // Attach other commands to write end of pipe(s) in background
             for (int i = 0; i < num_pipe_cmds2 ; i++){
                 thislist = &(arglist[pipe_cmds2[i]]);
                 if (debug) printf("9.2 cmd:%s args%s bg:%d p?=%d np=%d\n",
                     thislist[0], thislist[1], background, (int)piping2, num_pipe_cmds2);
-                start_cmd(in,fnpw[i],thislist,background,0);
+                start_cmd(in,fnpw[i],thislist,true,0);
             }
+            // Start read end in foreground
+            start_cmd(in,out,tmparglist,false,0);
             for (int k = 0; k < num_pipe_cmds2+1; k++){
                 free(tmparglist[k]);
                 if ( k < num_pipe_cmds) {
