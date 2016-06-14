@@ -160,16 +160,15 @@ int dx (char ** args){
 }
 
 int dc (char ** args){
-    char tmp[1024];
-    char * tmp2;
+    char * tmp;
     int n;
 
-    tmp2 = args[1];
-    if ( debug > 9) printf("DC %s \n", tmp2);
-    if (tmp2 == NULL) {
+    tmp = args[1];
+    if ( debug > 9) printf("DC %s \n", tmp);
+    if (tmp == NULL) {
         return 0;
     } else if (validate_number(tmp) != 0){
-       printf("shellp error - illegal fommand cound \n");
+       printf("shellp error - illegal fommand found \n");
        return 1; 
     } else {
        n = atoi(args[1]);
